@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Nim</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="UTF-8">  
+        <link rel="stylesheet" href="./styles/style.css">
+        
+        <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    </head>
+    
+        <div id=header>       
+            <h1>Nim</h1>      
+        </div>
+        
+        <div id="mainContainer" class="container">
+            <script type="text/babel">
+            
+                function Rules(props) {
+                    /*
+                        React component for displaying the rules
+                    */
+                    const visibility = props.visibility ? "block" : "none"; 
+                    const visibilityImage = props.visibility ? "inline" : "none"; 
+                    
+                    return (
+                        <p id="rules" style={{display: visibility}}>
+                            In nim, two players take turns removing matches set up like so:
+                            <br /><br />
+                            <img src="./styles/example.jpg" id="example" alt="Game setup" style={{display: visibilityImage}}></img>
+                            <br /><br />
+                            On their turn, a player can remove any number of matches <em>provided they
+                            all come from the same row.</em> You can remove matches by clicking on them.
+                            The player who is forced to remove the last match loses. 
+                            After pressing play, choose "Two players" to take turns playing
+                            with a friend, or choose "One player" to play against the computer.
+                        </p>             
+                    );
+                }
+
+                function PlayButton(props) {
+                    /*
+                        React component for the play button.
+                    */
+                    const visibility = props.visibility ? "block" : "none"; 
+
+                    return (
+                        <div id="playButton" className="buttons" style={{display: visibility}} onClick={props.onClick}>Play!</div>
+                    );
+                }
+
+                function RuleButton(props) {
+                    /*
+                        React component for button displaying the rules.
+                    */
+                    const visibility = props.visibility ? "block" : "none"; 
+                    
+                    return (
+                        <div id="ruleButton" className="buttons" style={{display: visibility}} onClick={props.onClick}>How do I Play?</div>
+                    );
+                }
+
+                function BackButton(props) {
+                    /*
+                        React component for the back button.
+                    */
+                    const visibility = props.visibility ? "inline-block" : "none"; 
+                    
+                    return (
+                        <div id="backButton" className="buttons" style={{display: visibility}} onClick={props.onClick}>{props.text}</div>
+                    );
+                }
+
+                function Player1 (props) {
+                    /*
+                        React component for displaying the One Player button.
+                    */
+                    const visibility = props.visibility ? "block" : "none"; 
+
+                    return (
+                        <div id="player1" className="buttons players" style={{display: visibility}} onClick={props.onClick}>One Player</div>
+                    );
+                }
+
+                function Player2(props) {
+                    /*
+                        React component for displaying the Two Player button.
+                    */
+                    const visibility = props.visibility ? "block" : "none"; 
+
+                    return (
+                        <div id="player2" className="buttons players" style={{display: visibility}} onClick={props.onClick}>Two Players</div>
+                    );
+                }
+                class Game extends React.Component {
+                    /*
+                        React component which keeps track of the state of the game, as
+                        well as updating and displaying the current game state.       
+                        The overview of the methods are as follows:
+                        
+                        The following methods are used to transition between
+                        different states of the game:
+                        
+                            goToRules()
+                            goBack()
+                            goToPlayerSelect()
+                            setNumPlayers(num) 
+                        
+                        The following methods are used to highlight and 
+                        unhighlight the matches when hovering over them:
+                        
+                            highlightMatches(firstMatch, lastMatch)
+                            unhighlightMatches(firstMatch, lastMatch)
+                        
+                        The following methods are called in order to progress 
+                        the game at each turn:
+                        
+                            matchClick(firstMatch, lastMatch)
+                            checkEndGame()
+                            removeMatches(firstMatch, lastMatch)
+                            changeMatchStatus(index, val)
+                            updateTurn()
+                            oneRowLeft()
+                            takeAllMatches(firstMatch, lastMatch)
+                            changeAccouncement()
+                            changeComputerAnnouncement()
+                            computerAnnouncementDisplay(numPeriod)
+                            displayWarning(display)
+                            endGame()
+                    */
+                    constructor(props) {
+                        super(props);
+                        this.state = {
+                            numPlayers: 0,
+                            turn: 1, 
+                            matchStatus: Array(16).fill(1),
+                            gameEnded: false,
+                            gameStarted: false,
+                            matchesLeft: 16,
+                            
+                            displayHome: true,
+                            displayRules: false,
+                            displayPlayers: false,
+                            displayBack: false,
+                            backButtonText: "Back",
+                        };
+                        
+                        // Since the matchStatus state is updated asynchronously,
+                        // this property remains synchronous to ensure that the statuses of 
+                        // matches don't lag behind. 
+                        this.matchStatus = Array(16).fill(1);
+                    }
+                    
+                    goToRules() {
+                        /*
+                            Updates the state to indicate that we 
+                            are on the page displaying the rules.
+                        */
+                        this.setState(
+                            {
+                                displayHome: false,
+                                displayRules: true,
+                                displayPlayers: false,
+                                displayBack: true,
+                            }
+                        );
+                    }
+                    
+                    goBack() {
+                        /*
+                            Updates the state to indicate that the 
+                            back button has been pressed.
+                        */
+                        if(this.state.gameStarted) {
+                            window.location.reload();
+                        } else {   
+                            this.setState(
+                                {
+                                    displayHome: true,
+                                    displayRules: false,
+                                    displayPlayers: false,
+                                    displayBack: false,                
+                                }
+                            );
+                        }
+                    }
+                    
+                   goToPlayerSelect() {
+                        /*
+                            Updates the state to indicate that we
+                            are on the player select screen.
+                        */
+                        this.setState(
+                            {
+                                displayHome: false,
+                                displayRules: false,
+                                displayPlayers: true,
+                                displayBack: true,
+                            }
+                        );        
+                        
+                    }
+                    
+                    highlightMatches(firstMatch, lastMatch) {
+                        /*
+                            Highlights the matches between the parameters
+                            firstMatch and lastMatch
+                        */
+                        if(this.state.numPlayers === 1 && this.state.turn === 2){
+                            return 0;
+                        }
+
+                        const id = "match";
+
+                        for(let i = firstMatch; i <= lastMatch; i++){
+                            if(this.state.matchStatus[i-1] === 1){
+                                let matchName = id.concat(i.toString());
+                                document.getElementById(matchName).style.backgroundColor = "rgb(100,120,160)";
+                            }
+                        }     
+                    }
+                    
+                    unhighlightMatches(firstMatch, lastMatch) {
+                        /*
+                            Unhighlights the matches between the parameters
+                            firstMatch and lastMatch
+                        */
+                        const id = "match";
+                        
+                        for(let i = firstMatch; i <= lastMatch; i++){
+                            let matchName = id.concat(i.toString());
+                            document.getElementById(matchName).style.removeProperty("background-color");
+                        }     
+                    }   
+                    
+                    setNumPlayers(num) {
+                        /*
+                            Proceeds to the game after the number
+                            of players have been selected.
+                        */
+                        this.setState({numPlayers: num});
+                        this.setState({gameStarted: true});
+                        
+                        let matches = document.getElementsByClassName("match");
+
+                        for(let i = 0; i < matches.length; i++){
+                            matches[i].style.display = "inline-block";
+                        }
+                        
+                        this.setState(
+                            {
+                                displayHome: false,
+                                displayRules: false,
+                                displayPlayers: false,
+                                displayBack: true,
+                                backButtonText: "Quit",
+                            }
+                        );  
+                        
+                        // The following HTMl elements are not React components, so they
+                        // are updated classically.
+                        document.getElementById("row1").style.display = "block";
+                        document.getElementById("row2").style.display = "block";
+                        document.getElementById("row3").style.display = "block";
+                        document.getElementById("row4").style.display = "block";
+                        document.getElementById("turnAnnouncement").style.display = "block";
+                        document.getElementById("announcementLine").style.display = "block";
+                        document.getElementById("mainContainer").style.padding = "2.5%"; 
+                    }   
+
+                    matchClick(firstMatch, lastMatch){
+                        /*
+                            Handles the event when a match is clicked.
+                        */
+                        if(this.state.turn === 2 && this.state.numPlayers === 1){
+                            return 0;
+                        }
+                    
+                        if(this.state.matchStatus[lastMatch-1] === 0 || this.gameEnded === true){
+                            return 0;
+                        }
+
+                        if(this.takeAllMatches(firstMatch, lastMatch)){
+                            this.displayWarning(true);
+                            return 0;
+                        }
+                         
+                        this.setState({matchesLeft: this.state.matchesLeft - this.removeMatches(firstMatch,lastMatch)}, () => this.checkEndGame());       
+                    }
+                    
+                    checkEndGame(){  
+                        /*
+                            Checks whether the game has ended.
+                        */
+                        if(this.state.matchesLeft === 1){
+                            this.endGame();
+                            return 0;
+                        }
+                        
+                        this.updateTurn();  
+                        this.displayWarning(false);
+                    }
+                    
+                    computerAction(){
+                        /*
+                            Handles the computer's turn by making a random, yet valid,
+                            selection of matches to remove.
+                        */
+                        let oneRowOffset = 0;
+
+                        if(this.oneRowLeft()){
+                            oneRowOffset = 1;
+                        }
+
+                        let choice = Math.floor((Math.random() * (this.state.matchesLeft-oneRowOffset)) + 1);
+                        let firstMatch, lastMatch = 0;
+                        let counter = 0;
+
+                        for(let i = 0; i <= 16; i++){
+                            if(counter === choice){
+                                lastMatch = i;
+                                break;
+                            }        
+
+                            if(this.state.matchStatus[i] === 1){
+                                counter++;
+                            }
+                        }
+                        
+                        if(lastMatch === 1){
+                            firstMatch = 1;
+                        } else if(lastMatch >= 2 && lastMatch <= 4){
+                            firstMatch = 2;
+                        } else if(lastMatch >= 5 && lastMatch <= 9){
+                            firstMatch = 5;
+                        } else {
+                            firstMatch = 10;
+                        } 
+                        
+                        this.setState({matchesLeft: this.state.matchesLeft - this.removeMatches(firstMatch,lastMatch)}, () => this.checkEndGame());   
+                    }
+                    
+                    removeMatches(firstMatch, lastMatch){
+                        /*
+                            Handles the removal of the matches between the 
+                            parameters firstMatch and lastMatch.
+                            Returns the number of matches removed.
+                        */
+                        const id = "match";
+                        let removeCount = 0;
+                        
+                        for(let i = firstMatch; i <= lastMatch; i++){
+                            if(this.state.matchStatus[i-1] === 1){
+                                removeCount++;
+                                this.changeMatchStatus(i-1, 0);
+                                let matchName = id.concat(i.toString());
+                                document.getElementById(matchName).style.opacity = 0.25;
+
+                                this.unhighlightMatches(firstMatch, lastMatch);
+                            }
+                        }
+
+                        return removeCount;
+                    }
+                  
+                    changeMatchStatus(index, val){
+                        /*
+                            Changes the status of the match at the specified 
+                            index in the matchStatus array to the value of val.
+                        */
+                        this.matchStatus[index] = val;
+                        this.setState({matchStatus: this.matchStatus});
+                    }
+                  
+                    updateTurn(){
+                        /*
+                            Updates the turn state.
+                        */
+                        if(this.state.numPlayers === 2 || this.state.turn === 2) {
+                            this.setState({turn: (this.state.turn % 2) + 1}, () => this.changeAnnouncement());
+                        } else {
+                            this.setState({turn: (this.state.turn % 2) + 1}, () => this.changeComputerAnnouncement());       
+                        }
+                    }
+
+                    oneRowLeft(){
+                        /*
+                            Returns true if there is only one row of matches left.
+                            Returns false otherwise.
+                        */
+                        let rowsGone = 0;
+                        
+                        if(this.state.matchStatus[0] === 0){
+                            rowsGone++;
+                        }
+                        if(this.state.matchStatus.slice(1,4).reduce((a, b) => a + b, 0) === 0){
+                            rowsGone++; 
+                        }
+                        if(this.state.matchStatus.slice(4,9).reduce((a, b) => a + b, 0) === 0){
+                            rowsGone++; 
+                        }
+                        if(this.state.matchStatus.slice(9,16).reduce((a, b) => a + b, 0) === 0){
+                            rowsGone++; 
+                        }
+                        
+                        if(rowsGone === 3){
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                    
+                    takeAllMatches(firstMatch, lastMatch){
+                        /*
+                            Returns true if removing the matches between
+                            firstMatch and lastMatch would result in all of the matches
+                            being removed.
+                            Returns false otherwise.
+                        */    
+                        let removeCount = 0;
+
+                        for(let i = firstMatch; i <= lastMatch; i++){
+                            if(this.state.matchStatus[i-1] === 1){
+                                removeCount++;
+                            }
+                        }
+                        
+                        if(this.state.matchesLeft === removeCount){
+                            return true;
+                        } else {
+                            return false;
+                        }    
+                    }
+                  
+                    changeAnnouncement(){
+                        /*
+                            Updates the announcement regarding which player's
+                            turn it is.
+                        */
+                        if(this.state.numPlayers === 2){
+                            let message = "It's player ";
+                            message = message.concat(this.state.turn);
+                            message = message.concat("'s turn!");
+                            document.getElementById("turnAnnouncement").innerHTML = message; 
+                        } else {
+                            document.getElementById("turnAnnouncement").innerHTML = "It's your turn!"; 
+                        }    
+                    }
+
+                    changeComputerAnnouncement() {
+                        /*
+                            Calls computerAnnouncementDisplay on a timer
+                            to reflect that the computer is thinking.
+                        */
+                        this.computerAnnouncementDisplay(1);
+                        setTimeout(() => this.computerAnnouncementDisplay(2), 600);
+                        setTimeout(() => this.computerAnnouncementDisplay(3), 1200);
+                        setTimeout(() => this.computerAction(), 1800);   
+                    }
+                    
+                    computerAnnouncementDisplay(numPeriod){
+                        /*
+                            Updates the announcement to reflect that the computer is thinking.
+                            The numPeriod parameter corresponds to the number of periods to put
+                            at the end of the announcement.
+                        */
+                        let message = "The computer is thinking";
+                        for(let i = 0; i < numPeriod; i++){
+                            message = message.concat(".");
+                        }
+                        document.getElementById("turnAnnouncement").innerHTML = message;  
+                    }
+                    
+                    displayWarning(display){
+                        /*
+                            Displays a warning if the player attempts to remove all
+                            of the remaining matches.
+                        */
+                        if(!this.state.gameEnded) {
+                            if(display){
+                                document.getElementById("turnAnnouncement").innerHTML = "You can't remove all the matches!";
+                            } else {
+                                this.changeAnnouncement();
+                            }
+                        }
+                    }    
+                    
+                    endGame(){
+                        /*
+                            Updated the state of the game to reflect
+                            that the game has ended.
+                        */
+                        let message = "The winner is Player ";
+                        this.setState({gameEnded: true});
+                        this.displayWarning(false);
+                        
+                        if(this.state.numPlayers === 2){
+                            message = message.concat(this.state.turn);
+                            message = message.concat("!");
+                            document.getElementById("turnAnnouncement").innerHTML = message;        
+                        } else {
+                            if(this.state.turn === 1){
+                                document.getElementById("turnAnnouncement").innerHTML = "You won!";     
+                            } else {
+                                document.getElementById("turnAnnouncement").innerHTML = "You lost. Sorry!";             
+                            }
+                        }
+                        
+                        this.setState({backButtonText: "Play Again!"});
+                    }
+                    
+                    render() {
+                        return( 
+                            <div>
+                                <PlayButton visibility={this.state.displayHome} onClick={() => this.goToPlayerSelect()}/>
+                                <RuleButton visibility={this.state.displayHome} onClick={() => this.goToRules()}/>
+                                <BackButton visibility={this.state.displayBack} text={this.state.backButtonText} onClick={() => this.goBack()}/>
+                                <Player1 visibility={this.state.displayPlayers} onClick={() => this.setNumPlayers(1)}/>
+                                <Player2 visibility={this.state.displayPlayers} onClick={() => this.setNumPlayers(2)}/>
+                                <Rules visibility={this.state.displayRules}/>
+
+                                <div id="turnAnnouncement">
+                                    It's player 1's turn!
+                                </div>
+                                <hr id="announcementLine"></hr>
+                            
+                                <div id="row1">
+                                    <div id="match1" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(1,1)} 
+                                    onMouseOut={() => this.unhighlightMatches(1,1)} 
+                                    onClick={() => this.matchClick(1,1)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>
+                                </div>
+                                
+                                <div id="row2">
+                                    <div id="match2" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(2,2)} 
+                                    onMouseOut={() => this.unhighlightMatches(2,2)} 
+                                    onClick={() => this.matchClick(2,2)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>                    
+                                    </div>                    
+                                    
+                                    <div id="match3" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(2,3)}
+                                    onMouseOut={() => this.unhighlightMatches(2,3)} 
+                                    onClick={() => this.matchClick(2,3)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>      
+                                    
+                                    <div id="match4" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(2,4)}
+                                    onMouseOut={() => this.unhighlightMatches(2,4)} 
+                                    onClick={() => this.matchClick(2,4)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>                                 
+                                </div>
+                                
+                                <div id="row3">
+                                    <div id="match5" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(5,5)}
+                                    onMouseOut={() => this.unhighlightMatches(5,5)} 
+                                    onClick={() => this.matchClick(5,5)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>   
+                                    
+                                    <div id="match6" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(5,6)}
+                                    onMouseOut={() => this.unhighlightMatches(5,6)} 
+                                    onClick={() => this.matchClick(5,6)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>     
+                                    
+                                    <div id="match7" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(5,7)} 
+                                    onMouseOut={() => this.unhighlightMatches(5,7)} 
+                                    onClick={() => this.matchClick(5,7)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div> 
+                                    
+                                    <div id="match8" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(5,8)} 
+                                    onMouseOut={() => this.unhighlightMatches(5,8)} 
+                                    onClick={() => this.matchClick(5,8)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>  
+                                    
+                                    <div id="match9" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(5,9)}
+                                    onMouseOut={() => this.unhighlightMatches(5,9)} 
+                                    onClick={() => this.matchClick(5,9)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>      
+                                </div>
+                                <div id="row4">
+                                    <div id="match10" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,10)}
+                                    onMouseOut={() => this.unhighlightMatches(10,10)} 
+                                    onClick={() => this.matchClick(10,10)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>                    
+                                    
+                                    <div id="match11" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,11)}
+                                    onMouseOut={() => this.unhighlightMatches(10,11)} 
+                                    onClick={() => this.matchClick(10,11)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>  
+                                    
+                                    <div id="match12" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,12)} 
+                                    onMouseOut={() => this.unhighlightMatches(10,12)} 
+                                    onClick={() => this.matchClick(10,12)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div> 
+                                    
+                                    <div id="match13" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,13)}
+                                    onMouseOut={() => this.unhighlightMatches(10,13)} 
+                                    onClick={() => this.matchClick(10,13)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>                    
+                                    
+                                    <div id="match14"
+                                    className="match" onMouseOver={() => this.highlightMatches(10,14)}
+                                    onMouseOut={() => this.unhighlightMatches(10,14)} 
+                                    onClick={() => this.matchClick(10,14)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div> 
+                                    
+                                    <div id="match15" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,15)}
+                                    onMouseOut={() => this.unhighlightMatches(10,15)} 
+                                    onClick={() => this.matchClick(10,15)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>    
+                                    
+                                    <div id="match16" 
+                                    className="match" 
+                                    onMouseOver={() => this.highlightMatches(10,16)}
+                                    onMouseOut={() => this.unhighlightMatches(10,16)} 
+                                    onClick={() => this.matchClick(10,16)}>
+                                        <img src="./styles/match.jpg" alt="match"></img>
+                                    </div>                          
+                                </div>
+                            </div>        
+                        
+                        );
+                    }
+                }
+
+                // =============================================================
+
+                const root = ReactDOM.createRoot(document.getElementById('mainContainer'));
+                root.render(<Game />);
+            
+            </script>
+        </div> 
+    </body>
+</html>

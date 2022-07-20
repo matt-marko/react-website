@@ -1,7 +1,8 @@
 # Information About Website
 This website lets you play a game of Nim either against a friend, or the computer.
-The game was written in Javasacript, on an HTML canvas. 
-The source code is contained in script.js
+The game was written using React. Each button in the game is rendered as a React function component, and the game itself is 
+implemented as a React class component, mainting the state of the game at each turn.
+The React and JavaScript code is contained within main.html.
 
 Preview of the website: https://htmlpreview.github.io/?https://github.com/matt-marko/nim/blob/main/main.html
 

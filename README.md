@@ -7,6 +7,8 @@ The React and JavaScript code is contained within main.html, inside the div tag 
 # How to run
 To view the website, download the contents of the repository to your machine. This includes the main.html file as well as the styles folder and all its contents. Then, the main.html file can be opened using the web browser of your choice.
 
+Alternately, visit https://htmlpreview.github.io/?https://github.com/matt-marko/nim/blob/main/main.html for a preview of the website. Although this preview uses the pure JavaScript version of the website which is contained within my GitHub repository called "website," but game functions identically to the React version contained in this repository.
+
 # Rules
 In Nim, two players take turns removing matches set up in five rows.
 On their turn, a player can remove any number of matches provided they all come from the same row. You can remove matches by clicking on them. 

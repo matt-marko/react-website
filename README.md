@@ -2,7 +2,7 @@
 This website lets you play a game of Nim either against a friend, or the computer.
 The game was written using React. Each button in the game is rendered as a React function component, and the game itself is 
 implemented as a React class component, mainting the state of the game at each turn.
-The React and JavaScript code is contained within main.html.
+The React and JavaScript code is contained within main.html, inside the div tag with the id of "mainContainer."
 
 # How to run
 To view the website, download the contents of the repository to your machine. This includes the main.html file as well as the styles folder and all its contents. Then, the main.html file can be opened using the web browser of your choice.
